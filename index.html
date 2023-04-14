@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js"></script>
+</head>
+
+<body>
+    <p>
+        You can execute any Python code. Just enter something in the box below and
+        click the button.
+    </p>
+    <textarea id="student" style="width: 100%" rows="8">
+a = 0
+    </textarea>
+    <textarea id="code" style="width: 100%" rows="20">
+import js
+student = js.document.getElementById('student')
+student_source = student.value
+
+from pedal import *
+clear_report()
+
+set_source(student_source)
+
+from pedal.tifa import tifa_analysis
+
+tifa_analysis()
+
+run()
+
+from pedal.resolvers import print_resolve
+
+print_resolve().message
+    </textarea>
+    <button onclick="evaluatePython()">Run</button>
+    <br />
+    <br />
+    <div>Output:</div>
+    <textarea id="output" style="width: 100%" rows="20" disabled></textarea>
+
+    <script>
+        const output = document.getElementById("output");
+        const student = document.getElementById("student");
+        const code = document.getElementById("code");
+
+        function addToOutput(s) {
+            output.value += s + "\n";
+        }
+
+        output.value = "Initializing...\n";
+        // init Pyodide
+        async function main() {
+            let pyodide = await loadPyodide({
+                stdin: window.prompt,
+                stdout: function(text) {
+                    console.log(text); // addOutput(text)
+                    //addOutput(text.join(""));
+                    return text;
+                }
+            });
+            await pyodide.loadPackage("https://files.pythonhosted.org/packages/bf/84/b2c2b0bab48fac2b81742e36efeb42c27034f02b4f48a5bf3a7bd5383467/pedal-2.3.8-py3-none-any.whl");
+            output.value += "Ready!\n";
+            return pyodide;
+        }
+        let pyodideReadyPromise = main();
+
+        async function evaluatePython() {
+            let pyodide = await pyodideReadyPromise;
+            try {
+                //pyodide.globals.student_source = student.value;
+                let output = pyodide.runPython(code.value);
+                addToOutput(output);
+            } catch (err) {
+                addToOutput(err);
+            }
+        }
+    </script>
+</body>
+
+</html>
